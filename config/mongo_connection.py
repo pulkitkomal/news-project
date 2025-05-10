@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from datetime import datetime, timedelta
 
 
 class MongoDBClient:
@@ -16,17 +17,36 @@ class MongoDBClient:
         return self.collection.count_documents({"url": url}, limit=1) > 0
 
     def vector_search(self, input):
+        three_days_ago = datetime.now() - timedelta(days=3)
         result = []
+
         if "raw_text" in input:
             result = self.collection.aggregate(
-                [
-                    {
-                        "$search": {
-                            "text": {"query": input["raw_text"], "path": "raw_text"}
-                        }
-                    },
-                    {"$project": {"_id": 0, "title": 1, "url": 1, "raw_text": 1}},
-                ]
-            )
+    [
+        {
+            "$search": {
+                "text": {
+                    "query": input["raw_text"],
+                    "path": "raw_text"
+                }
+            }
+        },
+        {
+            "$match": {
+                "created_at": {
+                    "$gte": three_days_ago  # Filter for documents created in the last 3 days
+                }
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "title": 1,
+                "url": 1,
+                "raw_text": 1
+            }
+        }
+    ]
+)
 
         return result

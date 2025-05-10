@@ -1,5 +1,6 @@
 from services import NewsFetcher, TextProcessor, EmbeddingGenerator
 from config import MongoDBClient, settings
+from datetime import datetime
 from pymongo.operations import SearchIndexModel
 
 
@@ -29,6 +30,7 @@ def get_data(rss_feeds, mongodb_connection_string, db_name):
                 "url": article["url"],
                 "raw_text": article["raw_text"],
                 "embeddings": list(emb.values),
+                "created_at": datetime.now().isoformat(),
             }
             # Save to MongoDB
             article_id = mongo_client.save_article(document)
@@ -46,6 +48,7 @@ def get_data(rss_feeds, mongodb_connection_string, db_name):
         model=search_index_model
     )
     print(f"Skipped {skipped} from {len(news_articles)}")
+
 
 def get_context(search_text, mongodb_connection_string, db_name):
     mongo_client = MongoDBClient(mongodb_connection_string, db_name)
